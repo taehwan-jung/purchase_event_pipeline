@@ -1,0 +1,16 @@
+config/.env
+.env
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+logs/
+airflow/logs/
+**/logs/
+jars/
+*logs
+checkpoints/
+
+data/*.csv

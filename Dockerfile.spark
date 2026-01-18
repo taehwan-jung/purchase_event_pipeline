@@ -1,0 +1,26 @@
+FROM apache/spark:3.5.1
+
+# root로 전환
+USER root
+
+# python-dotenv 포함
+RUN pip install --no-cache-dir python-dotenv
+
+# ivy 캐시 디렉토리 미리 만들고 권한 부여
+RUN mkdir -p /home/spark/.ivy2/cache && \
+    chown -R spark:spark /home/spark
+
+# python-dotenv에 머신러닝 라이브러리 추가 
+RUN pip install --no-cache-dir \
+    python-dotenv \
+    pandas \
+    xgboost \
+    scikit-learn \
+    numpy \
+    fastapi \
+    uvicorn \
+    psycopg2-binary
+
+
+# 다시 spark 유저로 돌아오기
+USER spark

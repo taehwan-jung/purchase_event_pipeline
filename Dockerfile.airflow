@@ -1,0 +1,32 @@
+# Dockerfile.airflow
+FROM apache/airflow:2.7.1
+
+USER root
+
+# Java(JRE/JDK) 및 필수 시스템 라이브러리 설치
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    openjdk-17-jdk-headless \
+    gcc \
+    g++ \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# JAVA_HOME 환경 변수 설정 (PySpark가 Java를 찾을 수 있게 함)
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
+
+USER airflow
+
+# 중요: pip install 시 --user 경로를 명시적으로 PATH에 추가
+# airflow 사용자가 설치한 패키지는 보통 이 경로에 들어갑니다.
+ENV PATH="/home/airflow/.local/bin:${PATH}"
+
+# 모델 학습에 필요한 파이썬 라이브러리 설치
+RUN pip install --no-cache-dir \ 
+    xgboost \
+    scikit-learn \
+    pandas \
+    sqlalchemy \
+    psycopg2-binary \
+    pyspark
