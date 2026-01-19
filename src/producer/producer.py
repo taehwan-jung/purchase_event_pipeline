@@ -60,8 +60,6 @@ def collect_data(producer):
         except Exception as e:
             logger.error(f"메시지 전송 실패: {e}")
 
-        time.sleep(0.01) # 0.01초 간격
-
     producer.flush()
     logger.info("모든 메시지 전송 완료")
 
