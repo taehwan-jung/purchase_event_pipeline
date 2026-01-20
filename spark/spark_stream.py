@@ -80,7 +80,6 @@ def add_timestamp_column(parsed_df):
     return df_with_ts
 
 # postgreSQL에 배치 단위 저장
-
 def write_to_postgres(batch_df, batch_id):
     print("🔥 [foreachBatch] batch_id =", batch_id)    
     # 1) 이 배치에 실제로 데이터가 있는지 확인
@@ -150,6 +149,9 @@ def main():
     console_query.stop()
     postgres_query.stop()
     spark.stop()
+
+    print("===== Final Postgres Query Progress =====")
+    print(postgres_query.lastProgress)
 
 if __name__ == "__main__":
     main()
