@@ -1,10 +1,10 @@
 # Purchase Event Pipeline
 
-## Project 개요
+## 📋Project 개요
 
 Kafka, Spark, Airflow를 활용하여 온라인 소매 데이터를 실시간으로 수집하고, 분석 및 머신러닝 기반의 예측 서비스를 제공하는 데이터 파이프라인 프로젝트입니다.
 
-## Project Workflow 
+## 🔄Project Workflow 
 
 1. **Data Ingestion**: 온라인 소매 거래 데이터를 Kafka Producer를 통해 실시간 전송합니다.
 2. **Data Processing**: Spark Streaming을 활용한 실시간 수집, 전처리 및 학습용 데이터셋 구축합니다.
