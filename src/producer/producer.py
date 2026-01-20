@@ -20,7 +20,7 @@ logger = setup_logger("producer", "logs/producer.log")
 
 def on_send_success(record_metadata):
     """메시지 전송 성공 시 호출"""
-    pass # 성능을 위해 성공 로그는 생략하거나 아주 가끔만 찍습니다.
+    pass 
 
 def on_send_error(excp):
     """메시지 전송 실패 시 호출"""
@@ -34,10 +34,10 @@ def create_producer():
             value_serializer=lambda x: json.dumps(x).encode('utf-8'),
             acks=1,
              # 성능 최적화 설정
-            batch_size=32768,           # 32KB 배치 크기 (기본 16KB)
+            batch_size=32768,           # 32KB 배치 크기
             linger_ms=10,                # 10ms 대기 후 전송
-            compression_type='lz4',     # gzip 압축, lz4
-            buffer_memory=67108864,      # 64MB 버퍼 (기본 32MB)
+            compression_type='lz4',     # lz4 압축
+            buffer_memory=67108864,      # 64MB 버퍼 
             max_in_flight_requests_per_connection=5  # 동시 요청 수
         )
         logger.info(f"kafka producer 연결 성공: {KAFKA_BOOTSTRAP_SERVERS}")
@@ -52,7 +52,7 @@ def collect_data(producer):
         return
     logger.info("데이터 수집을 시작합니다.")
     
- # 성능 메트릭
+     # 성능 메트릭
     start_time = time.time()
     message_count = 0
     error_count = 0
@@ -77,7 +77,6 @@ def collect_data(producer):
     df = df.rename(columns=column_mapping)
 
     # 3. 데이터 전처리 (결측치 및 형변환)
-    # 루프 안에서 str(), int()를 반복하지 않도록 미리 처리합니다.
     df['customer_id'] = df['customer_id'].fillna(0).astype(int).astype(str).replace('0', None)
     df['quantity'] = df['quantity'].astype(int)
     df['unit_price'] = df['unit_price'].astype(float)
@@ -85,7 +84,7 @@ def collect_data(producer):
     for col in ['invoice_no', 'stock_code', 'description', 'invoice_date', 'country']:
         df[col] = df[col].astype(str)
 
-    # 4. 최종 변환 (소문자 키를 가진 딕셔너리 리스트 생성)
+    # 4. 최종 변환 
     messages = df.to_dict('records')
 
     
@@ -107,8 +106,6 @@ def collect_data(producer):
         except Exception as e:
             logger.error(f"메시지 전송 실패: {e}")
             error_count += 1
-
-        # sleep 제거 - 비동기 처리로 자동 최적화
 
     # 모든 메시지 전송 대기
     producer.flush()
