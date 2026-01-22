@@ -1,6 +1,6 @@
 """
-데이터 수집기
-구매 이력 데이터를 사용하여 데이터를 수집하고 kafka로 전송
+Data Collector
+Collects purchase history data and transmits it to Kafka
 """
 import pandas as pd
 import json
@@ -12,43 +12,43 @@ from kafka import KafkaProducer
 from config.config import KAFKA_BOOTSTRAP_SERVERS, KAFKA_TOPIC, CSV_FILE_PATH
 from utils.log_utils import setup_logger
 
-# 다른 모듈 import를 위한 상위디렉토리 추가
+# Add parent directory for importing other modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# 로깅 설정
+# Logging setup
 logger = setup_logger("producer", "logs/producer.log")
 
-# producer 생성
+# Create producer
 def create_producer():
     try:
         producer = KafkaProducer(
             bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
             value_serializer=lambda x: json.dumps(x).encode('utf-8')
         )
-        logger.info(f"kafka producer 연결 성공: {KAFKA_BOOTSTRAP_SERVERS}")
+        logger.info(f"Kafka producer connected successfully: {KAFKA_BOOTSTRAP_SERVERS}")
         return producer
     except Exception as e:
-        logger.error("Kafka producer 연결 실패: {e}")
+        logger.error(f"Kafka producer connection failed: {e}")
         return None
-    
+
 def collect_data(producer):
     if not producer:
-        logger.info("producer가 없습니다.")
+        logger.info("Producer not available.")
         return
-    logger.info("데이터 수집을 시작합니다.")
+    logger.info("Starting data collection.")
 
-    # 성능 메트릭
+    # Performance metrics
     start_time = time.time()
     message_count = 0
     error_count = 0
 
-    # CSV 파일 읽기
+    # Read CSV file
     df = pd.read_csv(CSV_FILE_PATH, encoding="utf-8")
     total_records = len(df)
 
-    logger.info(f"총 {total_records}개의 레코드를 전송합니다.")
+    logger.info(f"Transmitting {total_records} records.")
 
-    # Kafka 메시지 전송
+    # Send Kafka messages
     for idx, row in enumerate(df.iterrows()):
         _, row = row
         message = {
@@ -66,28 +66,28 @@ def collect_data(producer):
             producer.send(KAFKA_TOPIC, value=message)
             message_count += 1
 
-            # 진행 상황 로깅 (10%마다)
+            # Log progress (every 10%)
             if (idx + 1) % (total_records // 10) == 0:
                 progress = ((idx + 1) / total_records) * 100
-                logger.info(f"진행률: {progress:.1f}% ({idx + 1}/{total_records})")
+                logger.info(f"Progress: {progress:.1f}% ({idx + 1}/{total_records})")
 
         except Exception as e:
-            logger.error(f"메시지 전송 실패: {e}")
+            logger.error(f"Message send failed: {e}")
             error_count += 1
 
     producer.flush()
 
-    # 성능 메트릭 계산
+    # Calculate performance metrics
     end_time = time.time()
     elapsed_time = end_time - start_time
     throughput = message_count / elapsed_time if elapsed_time > 0 else 0
 
     logger.info("=" * 50)
-    logger.info("모든 메시지 전송 완료")
-    logger.info(f"총 메시지 수: {message_count}")
-    logger.info(f"실패 메시지 수: {error_count}")
-    logger.info(f"소요 시간: {elapsed_time:.2f}초")
-    logger.info(f"처리량(Throughput): {throughput:.2f} msg/sec")
+    logger.info("All messages transmitted successfully")
+    logger.info(f"Total messages: {message_count}")
+    logger.info(f"Failed messages: {error_count}")
+    logger.info(f"Elapsed time: {elapsed_time:.2f} sec")
+    logger.info(f"Throughput: {throughput:.2f} msg/sec")
     logger.info("=" * 50)
 
     return {
@@ -100,20 +100,20 @@ def collect_data(producer):
 
 
 def main():
-    logger.info("데이터 수집 시작")
+    logger.info("Starting data collection")
     producer = create_producer()
 
     try:
         metrics = collect_data(producer)
         return metrics
     except KeyboardInterrupt:
-        logger.info("사용자에 의해 프로그램이 종료되었습니다.")
+        logger.info("Program terminated by user.")
     except Exception as e:
-        logger.error(f"오류 발생: {e}")
+        logger.error(f"Error occurred: {e}")
     finally:
         if producer:
             producer.close()
-            logger.info("kafka producer 연결 종료")
+            logger.info("Kafka producer connection closed")
 
 if __name__ == "__main__":
     main()

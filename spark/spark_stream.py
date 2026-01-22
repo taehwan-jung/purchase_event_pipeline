@@ -5,10 +5,10 @@ import time
 from config.config import KAFKA_BOOTSTRAP_SERVERS, KAFKA_TOPIC, POSTGRES_URL, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_TABLE
 from utils.log_utils import setup_logger
 
-# 로깅 설정
+# Logging setup
 logger = setup_logger("spark_stream", "logs/spark_stream.log")
 
-# Create spark
+# Create spark session
 def create_spark_session():
     spark = (
         SparkSession.builder
@@ -24,13 +24,13 @@ def create_spark_session():
     spark.sparkContext.setLogLevel("WARN")
     return spark
 
-# Schema 설정
+# Schema definition
 schema = StructType([
     StructField("invoice_no", StringType(), True),
     StructField("stock_code", StringType(), True),
     StructField("description", StringType(), True),
     StructField("quantity", IntegerType(), True),
-    StructField("invoice_date", StringType(), True), # 나중에 timestamp로 
+    StructField("invoice_date", StringType(), True), # Convert to timestamp later
     StructField("unit_price", DoubleType(), True),
     StructField("customer_id", StringType(), True),
     StructField("country", StringType(), True)
@@ -38,7 +38,7 @@ schema = StructType([
 ])
 
 
-# Read from kafka
+# Read from Kafka
 def read_from_kafka(spark):
     kafka_df = (
         spark.readStream
@@ -46,14 +46,14 @@ def read_from_kafka(spark):
             .option("kafka.bootstrap.servers", KAFKA_BOOTSTRAP_SERVERS)
             .option("subscribe", KAFKA_TOPIC)
             .option("startingOffsets", "earliest")
-            .option("maxOffsetsPerTrigger", 5000)
+            .option("maxOffsetsPerTrigger", 30000)
             .load()
     )
 
     raw_df = kafka_df.selectExpr("CAST(value as STRING) as json_str")
     return raw_df
 
-# Parsed_df
+# Parse JSON data
 def parse_json(raw_df):
     parsed_df = (
         raw_df
@@ -63,7 +63,7 @@ def parse_json(raw_df):
     return parsed_df
 
 
-# invoice_date timestamp로 변환(윈도우/워터마크)
+# Convert invoice_date to timestamp (for window/watermark)
 def add_timestamp_column(parsed_df):
     df_with_ts = (
         parsed_df
@@ -71,7 +71,7 @@ def add_timestamp_column(parsed_df):
             "invoice_ts",
             to_timestamp(col("invoice_date"), "yyyy-MM-dd H:mm")
         )
-        # invoice_date: DB 컬럼과 타입 맞추기 위해 timestamp로 변환
+        # invoice_date: Convert to timestamp to match DB column type
         .withColumn(
             "invoice_date",
             to_timestamp(col("invoice_date"), "yyyy-MM-dd H:mm")
@@ -79,10 +79,10 @@ def add_timestamp_column(parsed_df):
     )
     return df_with_ts
 
-# postgreSQL에 배치 단위 저장
+# Save to PostgreSQL in batch units
 def write_to_postgres(batch_df, batch_id):
-    print("🔥 [foreachBatch] batch_id =", batch_id)    
-    # 1) 이 배치에 실제로 데이터가 있는지 확인
+    print("🔥 [foreachBatch] batch_id =", batch_id)
+    # 1) Check if this batch actually has data
     count = batch_df.count()
     print("🔥 [foreachBatch] row count =", count)
     (
@@ -113,9 +113,9 @@ def start_console_query(df):
             .option("checkpointLocation", "/opt/spark/work-dir/checkpoints/console")
             .start()
     )
-    return query 
+    return query
 
-# PoistgreSQL query
+# PostgreSQL query
 def start_postgres_query(df):
     return(
         df.writeStream
@@ -126,26 +126,26 @@ def start_postgres_query(df):
     )
 
 
-# def main
+# Main function
 def main():
-    # 스파크 세션 생성
+    # Create Spark session
     spark = create_spark_session()
 
-    # kafka로 json 스트링 읽기
+    # Read JSON string from Kafka
     raw_df = read_from_kafka(spark)
 
-    # 스키마 적용 json 파싱
+    # Parse JSON with schema
     parsed_df = parse_json(raw_df)
 
-    # timestamp 컬럼 추가
+    # Add timestamp column
     df_with_ts = add_timestamp_column(parsed_df)
 
-    # console + postgresql 실행
+    # Start console + PostgreSQL queries
     console_query = start_console_query(df_with_ts)
     postgres_query = start_postgres_query(df_with_ts)
 
     # query.awaitTermination()
-    time.sleep(60)  # 1분
+    time.sleep(60)  # 1 minute
     console_query.stop()
     postgres_query.stop()
     spark.stop()
