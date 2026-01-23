@@ -6,17 +6,17 @@ import uvicorn
 from sqlalchemy import create_engine
 
 
-# api앱 설정
+# API app setup
 app = FastAPI(title="Customer_purchase_interval_prediction_service")
 
-# 1. DB 연결 설정
-# 형식: postgresql://ID:PW@HOST:PORT/DB_NAME
+# 1. Database connection setup
+# Format: postgresql://ID:PW@HOST:PORT/DB_NAME
 db_url = "postgresql://admin:admin@postgres:5432/purchasedb"
 
 DB_URL = db_url
 engine = create_engine(DB_URL)
 
-# 모델 로드
+# Load model
 Model_path = "/opt/spark-apps/models/customer_model.json"
 model = xgb.XGBRegressor()
 model.load_model(Model_path)
@@ -26,45 +26,45 @@ model.load_model(Model_path)
 def read_root():
     return {"message": "Customer purchase interval prediction api is running!"}
 
-# 2. 고객 ID로 예측하는 GET 엔드포인트 추가
+# 2. GET endpoint to predict by customer ID
 @app.get("/predict/{customer_id}")
 def predict_by_customer_id(customer_id: int):
     try:
-        # DB에서 해당 고객의 최신 전처리 데이터(Feature) 조회
+        # Query latest preprocessed data (Features) for the customer from DB
         query = f"SELECT * FROM purchase_data_mart WHERE customer_id = '{customer_id}' LIMIT 1"
         input_df = pd.read_sql(query, engine)
 
-        # 고객 데이터가 없는 경우 처리
+        # Handle case when customer data is not found
         if input_df.empty:
-            raise HTTPException(status_code=404, detail=f"고객 번호 {customer_id}를 찾을 수 없습니다.")
+            raise HTTPException(status_code=404, detail=f"Customer ID {customer_id} not found.")
 
-        # 피처 리스트
+        # Feature list
         features = [
-        'recency', 'frequency', 'avg_order_value', 
+        'recency', 'frequency', 'avg_order_value',
         'avg_shopping_hour', 'weekend_purchase_ratio', 'distinct_item_count',
         'std_purchase_interval', 'last_purchase_interval'
         ]
-        
-        # 예측 수행 
+
+        # Perform prediction
         predicted_cycle = float(model.predict(input_df[features])[0])
 
-        # [추가] 비즈니스 로직: 남은 일수 계산
-        # recency: 마지막 구매 후 지난 일수
+        # [Additional] Business logic: Calculate remaining days
+        # recency: days since last purchase
         current_recency = float(input_df['recency'].iloc[0])
         remaining_days_raw = predicted_cycle - current_recency
         remaining_days = round(remaining_days_raw, 1)
 
 
-        # 상태 판단
+        # Determine status
         if remaining_days < 0:
             status = "Immediate Action Needed (Overdue)"
-            message = f"이 고객은 재구매 예상 시점이 {abs(remaining_days)}일 지났습니다!"
+            message = f"This customer is {abs(remaining_days)} days overdue for repurchase!"
         elif remaining_days <= 3:
             status = "High Probability to Buy Soon"
-            message = f"이 고객은 약 {remaining_days}일 내에 재구매할 것으로 예상됩니다."
+            message = f"This customer is expected to repurchase within {remaining_days} days."
         else:
             status = "Stable"
-            message = f"다음 재구매까지 약 {remaining_days}일 정도 남았습니다."
+            message = f"Approximately {remaining_days} days remaining until next purchase."
 
         return {
             "customer_id": customer_id,
@@ -77,9 +77,9 @@ def predict_by_customer_id(customer_id: int):
             "message": message
         }
     except HTTPException as he:
-        raise he  # 404 에러 등은 그대로 전달
+        raise he  # Pass through 404 errors etc.
     except Exception as e:
-        print(f"❌ 내부 서버 에러 발생: {str(e)}")
+        print(f"❌ Internal server error occurred: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
     
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 """
-데이터 수집기
-구매 이력 데이터를 사용하여 데이터를 수집하고 kafka로 전송
+Data Collector
+Collect purchase history data and send to Kafka
 """
 import pandas as pd
 import json
@@ -12,56 +12,56 @@ from kafka import KafkaProducer
 from config.config import KAFKA_BOOTSTRAP_SERVERS, KAFKA_TOPIC, CSV_FILE_PATH
 from utils.log_utils import setup_logger
 
-# 다른 모듈 import를 위한 상위디렉토리 추가
+# Add parent directory for importing other modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# 로깅 설정
+# Logging setup
 logger = setup_logger("producer", "logs/producer.log")
 
 def on_send_success(record_metadata):
-    """메시지 전송 성공 시 호출"""
-    pass 
+    """Called when message send succeeds"""
+    pass
 
 def on_send_error(excp):
-    """메시지 전송 실패 시 호출"""
-    logger.error(f'메시지 전송 실패 세부 내용: {excp}')
+    """Called when message send fails"""
+    logger.error(f'Message send failed details: {excp}')
 
-# producer 생성
+# Create producer
 def create_producer():
     try:
         producer = KafkaProducer(
             bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
             value_serializer=lambda x: json.dumps(x).encode('utf-8'),
             acks=1,
-             # 성능 최적화 설정
-            batch_size=32768,           # 32KB 배치 크기
-            linger_ms=10,                # 10ms 대기 후 전송
-            compression_type='lz4',     # lz4 압축
-            buffer_memory=67108864,      # 64MB 버퍼 
-            max_in_flight_requests_per_connection=5  # 동시 요청 수
+             # Performance optimization settings
+            batch_size=32768,           # 32KB batch size
+            linger_ms=10,                # Send after 10ms wait
+            compression_type='lz4',     # lz4 compression
+            buffer_memory=67108864,      # 64MB buffer
+            max_in_flight_requests_per_connection=5  # Concurrent request count
         )
-        logger.info(f"kafka producer 연결 성공: {KAFKA_BOOTSTRAP_SERVERS}")
+        logger.info(f"Kafka producer connected successfully: {KAFKA_BOOTSTRAP_SERVERS}")
         return producer
     except Exception as e:
-        logger.error(f"Kafka producer 연결 실패: {e}")
+        logger.error(f"Kafka producer connection failed: {e}")
         return None
 
 def collect_data(producer):
     if not producer:
-        logger.info("producer가 없습니다.")
+        logger.info("No producer available.")
         return
-    logger.info("데이터 수집을 시작합니다.")
-    
-     # 성능 메트릭
+    logger.info("Starting data collection.")
+
+     # Performance metrics
     start_time = time.time()
     message_count = 0
     error_count = 0
 
-    # CSV 파일 읽기
+    # Read CSV file
     df = pd.read_csv(CSV_FILE_PATH, encoding="utf-8")
     total_records = len(df)
 
-    logger.info(f"총 {total_records}개의 레코드를 전송합니다.")
+    logger.info(f"Sending a total of {total_records} records.")
     
     
     column_mapping = {
@@ -76,51 +76,51 @@ def collect_data(producer):
     }
     df = df.rename(columns=column_mapping)
 
-    # 3. 데이터 전처리 (결측치 및 형변환)
+    # 3. Data preprocessing (missing values and type conversion)
     df['customer_id'] = df['customer_id'].fillna(0).astype(int).astype(str).replace('0', None)
     df['quantity'] = df['quantity'].astype(int)
     df['unit_price'] = df['unit_price'].astype(float)
-    # 나머지 컬럼들도 문자열로 미리 변환
+    # Convert remaining columns to strings in advance
     for col in ['invoice_no', 'stock_code', 'description', 'invoice_date', 'country']:
         df[col] = df[col].astype(str)
 
-    # 4. 최종 변환 
+    # 4. Final conversion
     messages = df.to_dict('records')
 
-    
 
-    # Kafka 메시지 전송 (비동기)
+
+    # Send Kafka messages (asynchronous)
     for idx, msg in enumerate(messages):
         try:
-            # 비동기 전송 (콜백 사용)
+            # Asynchronous send (using callbacks)
             producer.send(KAFKA_TOPIC, value=msg).add_callback(
                 on_send_success
             ).add_errback(on_send_error)
             message_count += 1
 
-            # 진행 상황 로깅 (10%마다)
+            # Log progress (every 10%)
             if (idx + 1) % (total_records // 10) == 0:
                 progress = ((idx + 1) / total_records) * 100
-                logger.info(f"진행률: {progress:.1f}% ({idx + 1}/{total_records})")
+                logger.info(f"Progress: {progress:.1f}% ({idx + 1}/{total_records})")
 
         except Exception as e:
-            logger.error(f"메시지 전송 실패: {e}")
+            logger.error(f"Message send failed: {e}")
             error_count += 1
 
-    # 모든 메시지 전송 대기
+    # Wait for all messages to be sent
     producer.flush()
 
-    # 성능 메트릭 계산
+    # Calculate performance metrics
     end_time = time.time()
     elapsed_time = end_time - start_time
     throughput = message_count / elapsed_time if elapsed_time > 0 else 0
 
     logger.info("=" * 50)
-    logger.info("모든 메시지 전송 완료")
-    logger.info(f"총 메시지 수: {message_count}")
-    logger.info(f"실패 메시지 수: {error_count}")
-    logger.info(f"소요 시간: {elapsed_time:.2f}초")
-    logger.info(f"처리량(Throughput): {throughput:.2f} msg/sec")
+    logger.info("All messages sent successfully")
+    logger.info(f"Total messages: {message_count}")
+    logger.info(f"Failed messages: {error_count}")
+    logger.info(f"Elapsed time: {elapsed_time:.2f}s")
+    logger.info(f"Throughput: {throughput:.2f} msg/sec")
     logger.info("=" * 50)
 
     return {
@@ -131,19 +131,19 @@ def collect_data(producer):
     }
 
 def main():
-    logger.info("데이터 수집 시작")
+    logger.info("Starting data collection")
     producer = create_producer()
-    
+
     try:
         collect_data(producer)
     except KeyboardInterrupt:
-        logger.info("사용자에 의해 프로그램이 종료되었습니다.")
+        logger.info("Program terminated by user.")
     except Exception as e:
-        logger.error(f"오류 발생: {e}")
+        logger.error(f"Error occurred: {e}")
     finally:
         if producer:
             producer.close()
-            logger.info("kafka producer 연결 종료")
+            logger.info("Kafka producer connection closed")
 
 if __name__ == "__main__":
     main()
