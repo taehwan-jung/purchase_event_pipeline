@@ -12,6 +12,7 @@ def setup_logger(name, log_file):
         return logger
 
     # Specify output format
+
     formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )

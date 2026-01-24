@@ -1,6 +1,8 @@
 """
 Data Collector
+<<<<<<< HEAD
 Collect purchase history data and send to Kafka
+
 """
 import pandas as pd
 import json
@@ -17,6 +19,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Logging setup
 logger = setup_logger("producer", "logs/producer.log")
+
 
 def on_send_success(record_metadata):
     """Called when message send succeeds"""
@@ -48,11 +51,13 @@ def create_producer():
 
 def collect_data(producer):
     if not producer:
+
         logger.info("No producer available.")
         return
     logger.info("Starting data collection.")
 
      # Performance metrics
+
     start_time = time.time()
     message_count = 0
     error_count = 0
@@ -62,7 +67,6 @@ def collect_data(producer):
     total_records = len(df)
 
     logger.info(f"Sending a total of {total_records} records.")
-    
     
     column_mapping = {
     "InvoiceNo": "invoice_no",
@@ -96,6 +100,7 @@ def collect_data(producer):
             producer.send(KAFKA_TOPIC, value=msg).add_callback(
                 on_send_success
             ).add_errback(on_send_error)
+
             message_count += 1
 
             # Log progress (every 10%)
@@ -116,10 +121,10 @@ def collect_data(producer):
     throughput = message_count / elapsed_time if elapsed_time > 0 else 0
 
     logger.info("=" * 50)
-    logger.info("All messages sent successfully")
+    logger.info("All messages transmitted successfully")
     logger.info(f"Total messages: {message_count}")
     logger.info(f"Failed messages: {error_count}")
-    logger.info(f"Elapsed time: {elapsed_time:.2f}s")
+    logger.info(f"Elapsed time: {elapsed_time:.2f} sec")
     logger.info(f"Throughput: {throughput:.2f} msg/sec")
     logger.info("=" * 50)
 
@@ -135,7 +140,8 @@ def main():
     producer = create_producer()
 
     try:
-        collect_data(producer)
+        metrics = collect_data(producer)
+        return metrics
     except KeyboardInterrupt:
         logger.info("Program terminated by user.")
     except Exception as e:

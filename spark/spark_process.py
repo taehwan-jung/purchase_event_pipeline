@@ -51,7 +51,6 @@ def load_raw_transaction(spark):
             .option("password", POSTGRES_PASSWORD) \
             .option("driver", POSTGRES_JDBC_DRIVER)\
             .load()
-
         print(f"✅ Data successfully loaded from PostgreSQL table '{POSTGRES_TABLE}'.")
         df_raw.printSchema()
         return df_raw
@@ -186,7 +185,6 @@ def save_to_postgres(final_mart):
     POSTGRES_MART_TABLE = "purchase_data_mart"  # Must use different name from source!
 
     print(f"🚀 [Mart Save] Starting data mart save (Rows: {final_mart.count()})")
-
     (
         final_mart.write
         .format("jdbc")

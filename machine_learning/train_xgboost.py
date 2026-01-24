@@ -9,27 +9,27 @@ import os
 
 
 
-# load from s3
+# Load from S3
 def load_data_from_s3():
     spark = SparkSession.builder \
         .appName("LoadForML") \
         .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.262") \
         .getOrCreate()
-    
+
     hadoop_conf = spark.sparkContext._jsc.hadoopConfiguration()
     hadoop_conf.set("fs.s3a.access.key", AWS_ACCESS_KEY_ID)
     hadoop_conf.set("fs.s3a.secret.key", AWS_SECRET_ACCESS_KEY)
     hadoop_conf.set("fs.s3a.endpoint", "s3.ap-northeast-2.amazonaws.com")
-    
+
     # Read from S3
     df_spark = spark.read.parquet("s3a://purchase-pipeline/purchase_data_mart")
 
     # Convert to pandas
     pdf = df_spark.toPandas()
     spark.stop()
-    return pdf 
+    return pdf
 
-# main
+# Main
 def main():
 
     # Load data

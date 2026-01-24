@@ -10,6 +10,10 @@ RUN pip install --no-cache-dir python-dotenv
 RUN mkdir -p /home/spark/.ivy2/cache && \
     chown -R spark:spark /home/spark
 
+# Spark conf 디렉토리 생성
+RUN mkdir -p /opt/spark/conf && \
+    chown -R spark:spark /opt/spark/conf
+
 # python-dotenv에 머신러닝 라이브러리 추가 
 RUN pip install --no-cache-dir \
     python-dotenv \

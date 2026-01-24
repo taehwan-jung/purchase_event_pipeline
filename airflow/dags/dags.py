@@ -90,7 +90,7 @@ def train_purchase_interval_model():
     model.save_model(save_path)
     print(f"✅ Model saved successfully: {save_path}")
 
-# DAG 설정
+# DAG configuration
 default_args = {
     'owner': 'admin',
     'start_date': datetime(2023, 12, 1),

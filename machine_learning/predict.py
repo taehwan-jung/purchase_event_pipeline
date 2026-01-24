@@ -26,5 +26,6 @@ def predict_customer_grade():
         prob = probabilities[i][pred]*100
         print(f"Customer {i+1} result: {grade} (Probability: {prob:.2f}%)")
 
+
 if __name__ == "__main__":
     predict_customer_grade()

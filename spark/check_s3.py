@@ -19,7 +19,7 @@ def create_view_session():
     hadoop_conf.set("fs.s3a.endpoint", "s3.ap-northeast-2.amazonaws.com")
     hadoop_conf.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
 
-    return spark     
+    return spark
 
 def main():
     spark = create_view_session()
