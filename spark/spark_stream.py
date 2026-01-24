@@ -48,7 +48,7 @@ def read_from_kafka(spark):
             .option("kafka.bootstrap.servers", KAFKA_BOOTSTRAP_SERVERS)
             .option("subscribe", KAFKA_TOPIC)
             .option("startingOffsets", "earliest")
-            .option("maxOffsetsPerTrigger", 1000000)
+            .option("maxOffsetsPerTrigger", 500000)
             .option("kafka.group.id", "spark-streaming-consumer")
             .option("kafka.group.commit.offsets", "true")
             .option("failOnDataLoss", "false")
