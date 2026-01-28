@@ -6,7 +6,7 @@ A real-time data pipeline project that collects online retail data, performs ana
 
 ## 🗺️ System Architecture
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/a97d0a0f-24f4-43e1-8b20-d28889ead545" width="80%" alt="Data Pipeline Architecture">
+  <img src="https://github.com/user-attachments/assets/d6d5800a-94a8-4e85-a9bf-c1669ccdd3ff" >
 </p>
 
 ## 🔄 Project Workflow
