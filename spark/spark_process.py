@@ -83,7 +83,7 @@ def cleanse_data(df):
     # Create derived column (total sales amount)
     df_cleaned = df_cleaned.withColumn("total_amount", col("quantity")* col("unit_price"))
 
-    print(f"✅ Data preprocessing completed. {df_cleaned.count()} rows retained.")
+    print(f"✅ Data preprocessing logic applied.")
 
     return df_cleaned
 
@@ -185,7 +185,7 @@ def save_to_postgres(final_mart):
     """
     POSTGRES_MART_TABLE = "purchase_data_mart"  # Must be different from original table name!
 
-    print(f"🚀 [Mart Save] Starting data mart save (Rows: {final_mart.count()})")
+    print(f"🚀[Mart Save] saving to PostfreSQL {POSTGRES_MART_TABLE})")
     
     (
         final_mart.write
@@ -240,7 +240,7 @@ def main():
             # Change float -> int after removing missing values
             final_mart = final_mart.withColumn("customer_id", col("customer_id").cast("long"))
 
-            final_mart.show(5)
+            # final_mart.show(5)
 
             # Save to S3
             save_to_s3(final_mart, "purchase-pipeline" , "purchase_data_mart")      

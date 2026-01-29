@@ -188,6 +188,10 @@ services:
       - PYTHONPATH=/opt/spark-apps
       - KAFKA_BOOTSTRAP_SERVERS=kafka1:29092,kafka2:29092,kafka3:29092
       - KAFKA_TOPIC=purchase-events  
+    deploy:
+      resources:
+        limits:
+          memory: 8G
     command:
       [
         "/opt/spark/bin/spark-class",
@@ -216,7 +220,7 @@ services:
       - purchase_pipeline_network
     environment:
       - SPARK_WORKER_CORES=2
-      - SPARK_WORKER_MEMORY=2g
+      - SPARK_WORKER_MEMORY=4g
       - PYTHONPATH=/opt/spark-apps
       - KAFKA_BOOTSTRAP_SERVERS=kafka1:29092,kafka2:29092,kafka3:29092
       - KAFKA_TOPIC=purchase-events  
