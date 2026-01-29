@@ -21,6 +21,8 @@ def create_spark_session():
             .appName("Spark_process")
             # .master("spark://spark-master:7077")
             .master("local[*]")
+            .config("spark.driver.memory", "4g") 
+            .config("spark.executor.memory", "4g")
             .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1,"
                     "org.postgresql:postgresql:42.7.3,"
                     "org.apache.hadoop:hadoop-aws:3.3.4,"
