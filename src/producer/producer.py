@@ -23,7 +23,10 @@ def create_producer():
     try:
         producer = KafkaProducer(
             bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
-            value_serializer=lambda x: json.dumps(x).encode('utf-8')
+            value_serializer=lambda x: json.dumps(x).encode('utf-8'),
+            enable_idempotence=True,
+            acks='all',
+            retries=5
         )
         logger.info(f"Kafka producer connected successfully: {KAFKA_BOOTSTRAP_SERVERS}")
         return producer
